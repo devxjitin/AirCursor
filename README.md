@@ -39,17 +39,21 @@ Press `q` or `Esc` in the preview window to quit.
 
 ### Gestures
 
-| Pose | Effect |
-|---|---|
-| Index finger out, other fingers curled (thumb either way) | Cursor follows your fingertip |
-| Pinch thumb and index together, then release quickly | Left click (fires on release) |
-| Two quick pinches (within ~0.45 s) | Double click |
-| Pinch held longer than 0.5 s | Drag: button goes down, cursor follows your hand, release the pinch to drop |
-| Pinch thumb and **middle** finger, release quickly | Right click |
-| Index + middle fingers out together (ring and little finger curled), move hand up/down/left/right | Scroll. A quick flick keeps gliding and fades out; touching (pinching) stops it |
-| Index + middle + **ring** fingers out (little finger curled), move hand up/down | Zoom (Ctrl + mouse wheel): up = zoom in |
-| **Hold a fist for 1 s** | Lock: all input is blocked until you hold a fist for 1 s again (a progress bar fills while you hold). Locking mid-drag releases the button |
-| Open palm, anything else, or hand out of view | Cursor freezes |
+Quick guide (the emoji show your hand shape; arrows show how to move it):
+
+| Gesture | Action | How |
+|:---:|---|---|
+| ☝️ | **Move cursor** | Index finger out, other fingers curled (thumb in or out). The cursor follows your fingertip |
+| 🤏 | **Left click** | Pinch thumb and index finger together, then let go quickly. Fires on release |
+| 🤏 🤏 | **Double click** | Two quick pinches, within about 0.45 s |
+| 🤏 ⏳ → ↔️ | **Drag and drop** | Pinch and hold for more than 0.5 s: the button goes down and the cursor follows your hand. Let go of the pinch to drop |
+| ✌️ + 🤏 | **Right click** | Keep index and middle fingers out, touch your thumb to your **middle** fingertip, then let go quickly |
+| ✌️ ↕️ ↔️ | **Scroll** | Index and middle fingers out together (ring and little finger curled), then move your hand up, down, left or right. A quick flick keeps gliding; pinching stops it |
+| 👆👆👆 ↕️ | **Zoom** | Index, middle and ring fingers out (little finger curled), then move your hand up to zoom in or down to zoom out (Ctrl + mouse wheel) |
+| ✊ ⏳ | **Lock / unlock** | Hold a fist for 1 s. All input is blocked until you hold a fist for 1 s again. A progress bar fills while you hold. Locking mid-drag releases the button |
+| ✋ or 🚫 | **Pause** | Open palm, any other hand shape, or no hand in view: the cursor freezes |
+
+Legend: ⏳ = hold it for a moment, ↕️ ↔️ = move your hand, 🚫 = hand out of view.
 
 Pinching moves your fingertip, so the click lands where the cursor was just *before* you started to pinch, and the cursor is held still until just after you release. Keep your middle, ring and little fingers curled while pinching with the index finger. For a right click, keep the index finger out and touch your thumb to your middle fingertip. Faster hand movement scrolls disproportionately further; `aircursor run --invert-scroll` flips the direction. If the hand is lost mid-drag the button is released after 0.3 s.
 
