@@ -11,8 +11,16 @@ class InputBackend(Protocol):
 
     def move_to(self, x: int, y: int) -> None: ...
 
-    def click(self, x: int, y: int) -> None:
-        """Left-click at (x, y)."""
+    def click(self, x: int, y: int, button: str = "left") -> None:
+        """Click ``button`` ("left" or "right") at (x, y)."""
+
+    def button_down(self, button: str = "left") -> None:
+        """Press and hold a mouse button at the current cursor position."""
+
+    def button_up(self, button: str = "left") -> None: ...
+
+    def scroll(self, dx: int, dy: int) -> None:
+        """Scroll by wheel units (120 = one notch). Positive dy = up, positive dx = right."""
 
 
 class RecordingBackend:
@@ -21,7 +29,10 @@ class RecordingBackend:
     def __init__(self, width: int = 1920, height: int = 1080) -> None:
         self._size = (width, height)
         self.moves: list[tuple[int, int]] = []
-        self.clicks: list[tuple[int, int]] = []
+        self.clicks: list[tuple[int, int]] = []  # left clicks
+        self.right_clicks: list[tuple[int, int]] = []
+        self.button_events: list[tuple[str, str]] = []  # ("down" | "up", button)
+        self.scrolls: list[tuple[int, int]] = []
 
     def screen_size(self) -> tuple[int, int]:
         return self._size
@@ -29,8 +40,17 @@ class RecordingBackend:
     def move_to(self, x: int, y: int) -> None:
         self.moves.append((x, y))
 
-    def click(self, x: int, y: int) -> None:
-        self.clicks.append((x, y))
+    def click(self, x: int, y: int, button: str = "left") -> None:
+        (self.clicks if button == "left" else self.right_clicks).append((x, y))
+
+    def button_down(self, button: str = "left") -> None:
+        self.button_events.append(("down", button))
+
+    def button_up(self, button: str = "left") -> None:
+        self.button_events.append(("up", button))
+
+    def scroll(self, dx: int, dy: int) -> None:
+        self.scrolls.append((dx, dy))
 
 
 def make_backend() -> InputBackend:

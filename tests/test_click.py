@@ -157,3 +157,10 @@ def test_fist_with_tucked_thumb_is_not_a_pinch():
     states, n = drive(ctrl, make_hand(), 5, n)
     drive(ctrl, make_hand(**POINT), 5, n)
     assert not any(s.pinched for s in states) and be.clicks == []
+
+
+def test_pinch_force_open_releases_even_when_thumb_still_close():
+    d = PinchDetector()
+    assert d.update(0.1)
+    assert d.update(0.1)
+    assert not d.update(0.1, force_open=True)

@@ -3,7 +3,7 @@
 Control your mouse cursor with your hand in the air, using only a webcam.
 See [PLAN.md](PLAN.md) for the design and roadmap.
 
-**Status:** Phase 2: move with your index finger, click and double-click by pinching (Windows). Scroll, right-click and drag are not implemented yet.
+**Status:** Phase 3: move, click, double-click, right-click, scroll and drag (Windows).
 
 ## Setup (Windows)
 
@@ -35,10 +35,12 @@ Press `q` or `Esc` in the preview window to quit.
 | Index finger out, other fingers curled (thumb either way) | Cursor follows your fingertip |
 | Pinch thumb and index together, then release quickly | Left click (fires on release) |
 | Two quick pinches (within ~0.45 s) | Double click |
-| Pinch held longer than 0.5 s | No click (reserved for drag) |
+| Pinch held longer than 0.5 s | Drag: button goes down, cursor follows your hand, release the pinch to drop |
+| Pinch thumb and **middle** finger, release quickly | Right click |
+| Index + middle fingers out together (ring and little finger curled), move hand up/down/left/right | Scroll |
 | Open palm, fist, anything else, or hand out of view | Cursor freezes |
 
-Pinching moves your fingertip, so the click lands where the cursor was just *before* you started to pinch, and the cursor is held still until just after you release. Keep your middle, ring and little fingers curled while pinching.
+Pinching moves your fingertip, so the click lands where the cursor was just *before* you started to pinch, and the cursor is held still until just after you release. Keep your middle, ring and little fingers curled while pinching with the index finger. For a right click, keep the index finger out and touch your thumb to your middle fingertip. Faster hand movement scrolls disproportionately further; `aircursor run --invert-scroll` flips the direction. If the hand is lost mid-drag the button is released after 0.3 s.
 
 The yellow rectangle in the preview is the active region: it maps to the whole screen, so you only need to move your hand within it.
 

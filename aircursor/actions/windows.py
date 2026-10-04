@@ -8,6 +8,14 @@ _SM_CXSCREEN = 0
 _SM_CYSCREEN = 1
 _MOUSEEVENTF_LEFTDOWN = 0x0002
 _MOUSEEVENTF_LEFTUP = 0x0004
+_MOUSEEVENTF_RIGHTDOWN = 0x0008
+_MOUSEEVENTF_RIGHTUP = 0x0010
+_MOUSEEVENTF_WHEEL = 0x0800
+_MOUSEEVENTF_HWHEEL = 0x01000
+_FLAGS = {
+    "left": (_MOUSEEVENTF_LEFTDOWN, _MOUSEEVENTF_LEFTUP),
+    "right": (_MOUSEEVENTF_RIGHTDOWN, _MOUSEEVENTF_RIGHTUP),
+}
 
 
 class WindowsBackend:
@@ -27,7 +35,20 @@ class WindowsBackend:
     def move_to(self, x: int, y: int) -> None:
         self._user32.SetCursorPos(int(x), int(y))
 
-    def click(self, x: int, y: int) -> None:
+    def click(self, x: int, y: int, button: str = "left") -> None:
         self.move_to(x, y)
-        self._user32.mouse_event(_MOUSEEVENTF_LEFTDOWN, 0, 0, 0, 0)
-        self._user32.mouse_event(_MOUSEEVENTF_LEFTUP, 0, 0, 0, 0)
+        down, up = _FLAGS[button]
+        self._user32.mouse_event(down, 0, 0, 0, 0)
+        self._user32.mouse_event(up, 0, 0, 0, 0)
+
+    def button_down(self, button: str = "left") -> None:
+        self._user32.mouse_event(_FLAGS[button][0], 0, 0, 0, 0)
+
+    def button_up(self, button: str = "left") -> None:
+        self._user32.mouse_event(_FLAGS[button][1], 0, 0, 0, 0)
+
+    def scroll(self, dx: int, dy: int) -> None:
+        if dy:
+            self._user32.mouse_event(_MOUSEEVENTF_WHEEL, 0, 0, dy, 0)
+        if dx:
+            self._user32.mouse_event(_MOUSEEVENTF_HWHEEL, 0, 0, dx, 0)

@@ -10,12 +10,31 @@ import cv2
 
 from aircursor.actions.backend import InputBackend, RecordingBackend, make_backend
 from aircursor.capture.source import Frame, open_source
-from aircursor.controller import CursorController
+from aircursor.controller import ControllerState, CursorController
 from aircursor.fps import FpsCounter
 from aircursor.tracking import HandTracker
 from aircursor.ui.overlay import draw_hand, draw_region, draw_status
 
 WINDOW = "AirCursor (q / Esc to quit)"
+
+
+_LABELS = {
+    "single": "CLICK",
+    "double": "DOUBLE CLICK",
+    "drag_start": "DRAG",
+    "drag_end": "DROP",
+}
+
+
+def _event_label(state: ControllerState) -> str | None:
+    """Short text describing the mouse action taken this frame, if any."""
+    if state.click is not None:
+        return _LABELS[state.click.value]
+    if state.right_click:
+        return "RIGHT CLICK"
+    if state.scrolled:
+        return "SCROLL"
+    return None
 
 
 def run(
@@ -40,11 +59,10 @@ def run(
                 hand = tracker.process(frame, ts)
                 state = controller.update(hand, ts) if controller else None
                 frames += 1
-                if state and state.click:
-                    flash_text = "DOUBLE CLICK" if state.click.value == "double" else "CLICK"
-                    flash_until = ts + 400
-                    if not show:
-                        print(f"{flash_text} at {state.click_pos}")
+                if state and (label := _event_label(state)):
+                    flash_text, flash_until = label, ts + 400
+                    if not show and label != "SCROLL":
+                        print(f"{label} at {state.click_pos or state.cursor}")
                 current = fps.tick()
                 if show:
                     mirror = source.isdigit()  # webcams are shown like a mirror
@@ -69,6 +87,8 @@ def run(
                     pose = f", pose={state.pose.value}" if state else ""
                     print(f"{current:.1f} FPS, hand={'yes' if hand else 'no'}{pose}")
     finally:
+        if controller is not None:
+            controller.release_all()  # never leave a mouse button stuck down
         src.close()
         if show:
             cv2.destroyAllWindows()
@@ -90,11 +110,16 @@ def main(argv: Sequence[str] | None = None) -> int:
             p.add_argument(
                 "--dry-run", action="store_true", help="do not move the real cursor (log only)"
             )
+            p.add_argument(
+                "--invert-scroll",
+                action="store_true",
+                help="touch-style scrolling: moving the hand up scrolls the page down",
+            )
     args = parser.parse_args(argv)
 
     controller = None
     if args.command == "run":
         backend: InputBackend = RecordingBackend() if args.dry_run else make_backend()
-        controller = CursorController(backend)
+        controller = CursorController(backend, invert_scroll=args.invert_scroll)
     run(args.source, controller, show=not args.no_window, max_frames=args.max_frames)
     return 0

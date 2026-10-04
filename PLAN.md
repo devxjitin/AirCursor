@@ -3,7 +3,7 @@
 Control the mouse cursor with your hand in the air, using only a webcam.
 Move a finger to move the cursor, tap to click, double tap to double-click, two fingers to scroll, and so on.
 
-Status: **Phases 0–2 implemented with pinch click (pending on-device tuning); air tap deferred.** Decided: Windows first, Python + MediaPipe. Still open (before Phase 2): click default, right-click gesture, camera, handedness.
+Status: **Phases 0–3 implemented (pending on-device tuning); air tap deferred; scroll inertia not done.** Decided: Windows first, Python + MediaPipe. Still open (before Phase 2): click default, right-click gesture, camera, handedness.
 
 ---
 
@@ -125,7 +125,7 @@ Each phase ends with something runnable and demonstrable.
 - Replay tests with precision/recall targets (e.g. ≥95% detection, <1 false click per 5 minutes of normal use).
 - **Exit:** reliable left click and double click in either mode.
 
-### Phase 3 — Scroll, right click, drag (2–3 days)
+### Phase 3 — Scroll, right click, drag (2–3 days) ✅ (right click = thumb + middle pinch; no inertia yet)
 - Two-finger scroll with velocity-to-delta mapping, inertia, and a dead zone.
 - Right click gesture.
 - Pinch-hold drag/drop.

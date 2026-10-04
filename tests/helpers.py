@@ -18,6 +18,7 @@ def make_hand(
     pinky: bool = False,
     offset: tuple[float, float] = (0.0, 0.0),
     pinch: bool = False,
+    pinch_middle: bool = False,
 ) -> Hand:
     pts = np.zeros((21, 3), dtype=np.float32)
     pts[0] = (0.5, 0.9, 0)
@@ -33,6 +34,8 @@ def make_hand(
             pts[base + i] = (x, y, 0)
     if pinch:
         pts[4] = pts[8] + (0.01, 0.02, 0)  # thumb tip touching the index tip
+    if pinch_middle:
+        pts[4] = pts[12] + (0.01, 0.02, 0)  # thumb tip touching the middle tip
     pts[:, 0] += offset[0]
     pts[:, 1] += offset[1]
     return Hand(points=pts, handedness="Right", score=0.99)
