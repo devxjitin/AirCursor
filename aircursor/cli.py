@@ -27,7 +27,6 @@ from aircursor.ui.feedback import Feedback
 from aircursor.ui.overlay import (
     draw_calibration,
     draw_hand,
-    draw_lock,
     draw_region,
     draw_status,
 )
@@ -45,8 +44,6 @@ _SOUNDS = {"single": "click", "double": "double", "drag_start": "drag", "drag_en
 
 def _event_label(state: ControllerState) -> str | None:
     """Short text describing the mouse action taken this frame, if any."""
-    if state.lock_changed:
-        return "LOCKED" if state.locked else "UNLOCKED"
     if state.click is not None:
         return _LABELS[state.click.value]
     if state.right_click:
@@ -59,8 +56,6 @@ def _event_label(state: ControllerState) -> str | None:
 
 
 def _sound_for(state: ControllerState) -> str | None:
-    if state.lock_changed:
-        return "lock" if state.locked else "unlock"
     if state.click is not None:
         return _SOUNDS[state.click.value]
     return "right" if state.right_click else None
@@ -118,15 +113,12 @@ def run(
                         state.pose.value if state else None,
                         flash_text if ts < flash_until else None,
                     )
-                    if state:
-                        draw_lock(frame, state.locked, state.lock_progress, cfg.safety.lock_hold)
                     cv2.imshow(WINDOW, frame)
                     if cv2.waitKey(1) & 0xFF in (ord("q"), 27):
                         break
                 elif frames % 30 == 0:
                     pose = f", pose={state.pose.value}" if state else ""
-                    lock = ", LOCKED" if state and state.locked else ""
-                    print(f"{current:.1f} FPS, hand={'yes' if hand else 'no'}{pose}{lock}")
+                    print(f"{current:.1f} FPS, hand={'yes' if hand else 'no'}{pose}")
     finally:
         if controller is not None:
             controller.release_all()  # never leave a mouse button stuck down
@@ -219,7 +211,6 @@ def main(argv: Sequence[str] | None = None) -> int:
         if name == "run":
             p.add_argument("--dry-run", action="store_true", help="log only; don't move the cursor")
             p.add_argument("--invert-scroll", action="store_true", help="touch-style scrolling")
-            p.add_argument("--start-locked", action="store_true", help="start with input locked")
     rec = sub.add_parser("record", help="record hand landmarks (no video) to a file")
     rec.add_argument("output", help="file to write (.jsonl)")
     rec.add_argument("--source", default=None, help="camera index or video file")
@@ -279,7 +270,6 @@ def main(argv: Sequence[str] | None = None) -> int:
         controller = None
         if args.command == "run":
             cfg.scroll.invert = cfg.scroll.invert or args.invert_scroll
-            cfg.safety.start_locked = cfg.safety.start_locked or args.start_locked
             backend: InputBackend = RecordingBackend() if args.dry_run else make_backend()
             controller = CursorController(backend, config=cfg)
         run(source, controller, show=not args.no_window, max_frames=args.max_frames, cfg=cfg)

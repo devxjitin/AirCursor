@@ -15,7 +15,7 @@ class Pose(Enum):
     TWO_FINGERS = "two_fingers"  # index + middle: scroll
     THREE_FINGERS = "three_fingers"  # index + middle + ring: zoom
     OPEN_PALM = "open_palm"  # pause
-    FIST = "fist"  # idle / lock
+    FIST = "fist"  # idle
     OTHER = "other"  # anything else
 
 

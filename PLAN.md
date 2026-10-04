@@ -35,7 +35,6 @@ Status: **Phases 0–4 implemented, Phase 5 partly (pending on-device tuning). D
 | Scroll | **Two fingers** (index + middle extended, together) moving up/down | Left/right for horizontal scroll |
 | Drag and drop | Pinch (thumb + index) and hold, move, release to drop | Also covers text selection |
 | Pause / idle | Open palm, or hand out of frame | Cursor freezes; prevents stray input |
-| Re-enable / lock toggle | Hold a fist for ~1 s | Safety switch |
 | Zoom (later) | Pinch spread with two hands, or Ctrl+scroll mapping | Phase 5 |
 
 Principle: gestures must be **distinct in hand shape** (finger count / pose), so a pose classifier picks the *mode* and motion within the mode picks the *action*.
@@ -92,7 +91,7 @@ docs/
 | R1 | **Air tap is hard with one 2D camera.** Forward motion shows up as a small change in z estimate, fingertip scale, and a brief downward y-shift, and all of these are noisy. | Detect the tap from a combination of signals (z-velocity, finger-length foreshortening, short downward jab). Collect real recordings and tune thresholds. Ship **pinch-to-click as a built-in alternative mode**, and let the user choose in config. Decide the default after Phase 2 testing. |
 | R2 | **Cursor moves during the tap**, so the click lands on the wrong spot. | Keep a ~150 ms ring buffer of cursor positions. When a tap is confirmed, click at the position from *before* the tap motion began, and freeze the cursor for a short lock window. |
 | R3 | **Jitter versus lag.** Raw landmarks shake. Heavy smoothing feels laggy. | One Euro Filter, with `min_cutoff` and `beta` tunable. Add a small dead zone when the hand is almost still. |
-| R4 | **Accidental clicks and scrolls** (talking with your hands, reaching for the mouse). | Pose-gated modes, an activation hysteresis (a pose must be held for N frames), the open-palm pause, and the fist lock toggle. |
+| R4 | **Accidental clicks and scrolls** (talking with your hands, reaching for the mouse). | Pose-gated modes, an activation hysteresis (a pose must be held for N frames), and the open-palm / fist pause. (A fist-hold lock toggle was built in Phase 4 and later removed.) |
 | R5 | **Arm fatigue** ("gorilla arm"). | Small active region (the user reaches only about 1/3 of the frame), relative/clutch mode (lift hand to re-center), and rest-friendly defaults. |
 | R6 | **Lighting, backgrounds, occlusion, and hand-edge-of-frame loss.** | Rely on MediaPipe robustness, show a "hand lost" indicator, and add a low-light tip to the docs. |
 | R7 | **Latency** from capture, inference, and smoothing. | Threaded capture with latest-frame only, a lite model, reduced resolution (e.g. 640×480), profile each stage, and set a latency budget per stage. |
@@ -132,7 +131,7 @@ Each phase ends with something runnable and demonstrable.
 - **Exit:** can browse a web page and move a file or select text hands-free.
 
 ### Phase 4 — Polish and safety (2–3 days) ✅ (Linux backend deferred)
-- Fist lock toggle, a visible status overlay (current mode, locked or not), audio or visual click feedback.
+- ~~Fist lock toggle~~ (removed on request), a visible status overlay, audio or visual click feedback.
 - Calibration wizard (set the active region and the user's reach).
 - Config file with per-gesture sensitivity, and left-handed mode.
 - Linux backend and a `doctor` command.

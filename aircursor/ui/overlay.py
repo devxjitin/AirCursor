@@ -58,20 +58,6 @@ def draw_status(
 
 
 _RED = (0, 0, 255)
-_ORANGE = (0, 165, 255)
-
-
-def draw_lock(frame: Frame, locked: bool, progress: float, hold_seconds: float) -> None:
-    """Show the lock state, and a progress bar while a fist is being held to toggle it."""
-    h, w = frame.shape[:2]
-    if locked:
-        cv2.rectangle(frame, (0, h - 34), (w, h), _RED, -1)
-        msg = f"LOCKED - hold a fist {hold_seconds:g}s to unlock"
-        cv2.putText(frame, msg, (10, h - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.6, _WHITE, 2)
-    if progress > 0:
-        x0, y0, bw = 10, h - 60, w - 20
-        cv2.rectangle(frame, (x0, y0), (x0 + bw, y0 + 10), _WHITE, 1)
-        cv2.rectangle(frame, (x0, y0), (x0 + int(bw * progress), y0 + 10), _ORANGE, -1)
 
 
 _GREY = (200, 200, 200)

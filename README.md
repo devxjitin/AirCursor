@@ -3,7 +3,7 @@
 Control your mouse cursor with your hand in the air, using only a webcam.
 See [PLAN.md](PLAN.md) for the design and roadmap.
 
-**Status:** Phase 5 (partial): move, click, double-click, right-click, scroll (with flick inertia), zoom and drag (Windows), plus lock gesture, calibration, config file, `doctor`, and landmark record/replay.
+**Status:** Phase 5 (partial): move, click, double-click, right-click, scroll (with flick inertia), zoom and drag (Windows), plus calibration, config file, `doctor`, and landmark record/replay.
 
 ## Setup (Windows)
 
@@ -50,10 +50,9 @@ Quick guide (the emoji show your hand shape; arrows show how to move it):
 | ✌️ + 🤏 | **Right click** | Keep index and middle fingers out, touch your thumb to your **middle** fingertip, then let go quickly |
 | ✌️ ↕️ ↔️ | **Scroll** | Index and middle fingers out together (ring and little finger curled), then move your hand up, down, left or right. A quick flick keeps gliding; pinching stops it |
 | 👆👆👆 ↕️ | **Zoom** | Index, middle and ring fingers out (little finger curled), then move your hand up to zoom in or down to zoom out (Ctrl + mouse wheel) |
-| ✊ ⏳ | **Lock / unlock** | Hold a fist for 1 s. All input is blocked until you hold a fist for 1 s again. A progress bar fills while you hold. Locking mid-drag releases the button |
-| ✋ or 🚫 | **Pause** | Open palm, any other hand shape, or no hand in view: the cursor freezes |
+| ✊ ✋ or 🚫 | **Pause** | Fist, open palm, any other hand shape, or no hand in view: the cursor freezes |
 
-Legend: ⏳ = hold it for a moment, ↕️ ↔️ = move your hand, 🚫 = hand out of view.
+Legend: ⏳ = hold it for a moment, ↕️ ↔️ = move your hand, 🚫 = hand out of view. To stop the program, press `q` or `Esc` in the preview window (or Ctrl+C in the terminal).
 
 Pinching moves your fingertip, so the click lands where the cursor was just *before* you started to pinch, and the cursor is held still until just after you release. Keep your middle, ring and little fingers curled while pinching with the index finger. For a right click, keep the index finger out and touch your thumb to your middle fingertip. Faster hand movement scrolls disproportionately further; `aircursor run --invert-scroll` flips the direction. If the hand is lost mid-drag the button is released after 0.3 s.
 
@@ -87,7 +86,6 @@ unknown or invalid settings are reported by name. Use `--config FILE` on any com
 | `[click]` | pinch thresholds, `max_hold`, `double_window`, `lookback` |
 | `[scroll]` | `gain`, `accel`, `invert`, `inertia`, `inertia_time` |
 | `[zoom]` | `enabled`, `gain`, `invert` |
-| `[safety]` | `lock_hold` seconds, `start_locked` |
-| `[feedback]` | `sound`: short beeps for click / drag / lock (Windows) |
+| `[feedback]` | `sound`: short beeps for click / drag (Windows) |
 
-The preview shows `LOCKED` banners and a flash for each action. `aircursor run --start-locked` starts locked.
+The preview flashes the name of each action (CLICK, DRAG, SCROLL, ...).

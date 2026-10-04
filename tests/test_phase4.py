@@ -12,7 +12,7 @@ from aircursor.cursor.mapper import ActiveRegion
 from aircursor.doctor import Check, run_doctor
 from aircursor.tracking.landmarks import Hand
 from aircursor.tracking.select import select_hand
-from aircursor.ui.overlay import draw_calibration, draw_lock
+from aircursor.ui.overlay import draw_calibration
 
 FRAME = 0.033
 
@@ -43,7 +43,6 @@ def test_partial_config_overrides_only_given_keys(tmp_path):
         "[cursor]\nregion = [0.5, 0.5, 0.4, 0.4]\n",
         "[cursor]\nregion = [0.1, 0.1, 0.15, 0.9]\n",  # too narrow
         "[click]\npinch_close = 0.6\npinch_open = 0.5\n",
-        "[safety]\nstart_locked = 1\n",
         "this is not toml",
     ],
 )
@@ -109,7 +108,7 @@ def test_select_hand_preference_ignores_other_hand():
     assert select_hand([], "any") is None
 
 
-# --- lock ----------------------------------------------------------------------------------
+# --- fist ----------------------------------------------------------------------------------
 
 
 def drive(ctrl, hand_, frames, start):
@@ -119,72 +118,21 @@ def drive(ctrl, hand_, frames, start):
     return out, start + frames
 
 
-def make_ctrl(**kw):
+def test_holding_a_fist_does_nothing_and_input_still_works_afterwards():
     be = RecordingBackend(1000, 1000)
     cfg = Config()
     cfg.cursor.region = [0.0, 0.0, 1.0, 1.0]
-    cfg.safety.lock_hold = 1.0
-    for k, v in kw.items():
-        setattr(cfg.safety, k, v)
-    return be, CursorController(be, config=cfg)
-
-
-def test_holding_a_fist_locks_and_shows_progress():
-    be, ctrl = make_ctrl()
-    states, n = drive(ctrl, make_hand(**FIST), 20, 0)
-    assert not states[-1].locked and 0 < states[-1].lock_progress < 1
-    states, n = drive(ctrl, make_hand(**FIST), 20, n)
-    assert ctrl.locked and any(s.lock_changed and s.locked for s in states)
-
-
-def test_brief_fist_does_not_lock():
-    _, ctrl = make_ctrl()
-    _, n = drive(ctrl, make_hand(**FIST), 15, 0)  # ~0.5 s
-    drive(ctrl, make_hand(**POINT), 5, n)
-    assert not ctrl.locked
-
-
-def test_locked_blocks_all_output():
-    be, ctrl = make_ctrl()
-    _, n = drive(ctrl, make_hand(**FIST), 40, 0)
-    assert ctrl.locked
-    drive(ctrl, make_hand(**POINT), 10, n)
-    n2 = n + 10
-    drive(ctrl, make_hand(**POINT, pinch=True), 8, n2)
-    drive(ctrl, make_hand(index=True, middle=True, offset=(0, -0.2)), 8, n2 + 8)
-    assert be.moves == [] and be.clicks == [] and be.scrolls == [] and be.button_events == []
-
-
-def test_fist_again_unlocks_and_input_resumes():
-    be, ctrl = make_ctrl()
-    _, n = drive(ctrl, make_hand(**FIST), 40, 0)
-    _, n = drive(ctrl, make_hand(**POINT), 5, n)
-    assert ctrl.locked
-    _, n = drive(ctrl, make_hand(**FIST), 40, n)
-    assert not ctrl.locked
+    ctrl = CursorController(be, config=cfg)
+    _, n = drive(ctrl, make_hand(**FIST), 120, 0)  # 4 s fist
+    assert be.moves == [] and be.clicks == [] and be.button_events == []
     _, n = drive(ctrl, make_hand(**POINT), 10, n)
-    assert be.moves
+    assert be.moves  # the cursor works right away: nothing was locked
 
 
-def test_one_long_fist_toggles_only_once():
-    _, ctrl = make_ctrl()
-    states, _ = drive(ctrl, make_hand(**FIST), 120, 0)  # 4 s
-    assert sum(s.lock_changed for s in states) == 1 and ctrl.locked
-
-
-def test_locking_during_a_drag_releases_the_button():
-    be, ctrl = make_ctrl()
-    _, n = drive(ctrl, make_hand(**POINT), 15, 0)
-    _, n = drive(ctrl, make_hand(**POINT, pinch=True), 20, n)
-    assert be.button_events == [("down", "left")]
-    drive(ctrl, make_hand(**FIST), 45, n)
-    assert be.button_events[-1] == ("up", "left")
-
-
-def test_start_locked_option():
-    be, ctrl = make_ctrl(start_locked=True)
-    drive(ctrl, make_hand(**POINT), 10, 0)
-    assert ctrl.locked and be.moves == []
+def test_old_config_with_safety_section_is_still_accepted(tmp_path):
+    p = tmp_path / "c.toml"
+    p.write_text("[safety]\nlock_hold = 1.0\nstart_locked = false\n[scroll]\ninvert = true\n")
+    assert cfgmod.load(p).scroll.invert
 
 
 # --- calibration ---------------------------------------------------------------------------
@@ -245,8 +193,7 @@ def test_doctor_exit_codes_and_output():
     assert any("[WARN] b" in line for line in lines) and any("[FAIL] c" in line for line in lines)
 
 
-def test_overlay_lock_and_calibration_draw():
+def test_overlay_calibration_draw():
     frame = np.zeros((120, 160, 3), dtype=np.uint8)
-    draw_lock(frame, True, 0.5, 1.0)
     draw_calibration(frame, "p", "m", 0.5, [(0.5, 0.5)])
     assert frame.any()

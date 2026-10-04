@@ -60,14 +60,8 @@ class ZoomConfig:
 
 
 @dataclass
-class SafetyConfig:
-    lock_hold: float = 1.0  # seconds a fist must be held to lock / unlock all input
-    start_locked: bool = False
-
-
-@dataclass
 class FeedbackConfig:
-    sound: bool = True  # short beeps on click / drag / lock (Windows only)
+    sound: bool = True  # short beeps on click / drag (Windows only)
 
 
 @dataclass
@@ -78,7 +72,6 @@ class Config:
     click: ClickConfig = field(default_factory=ClickConfig)
     scroll: ScrollConfig = field(default_factory=ScrollConfig)
     zoom: ZoomConfig = field(default_factory=ZoomConfig)
-    safety: SafetyConfig = field(default_factory=SafetyConfig)
     feedback: FeedbackConfig = field(default_factory=FeedbackConfig)
 
 
@@ -135,14 +128,15 @@ def validate(cfg: Config) -> Config:
         raise ConfigError("click timings must be positive")
     if cfg.scroll.inertia_time <= 0 or cfg.scroll.gain <= 0 or cfg.zoom.gain <= 0:
         raise ConfigError("scroll.inertia_time, scroll.gain and zoom.gain must be positive")
-    if cfg.safety.lock_hold <= 0:
-        raise ConfigError("safety.lock_hold must be positive")
     if cfg.camera.width <= 0 or cfg.camera.height <= 0:
         raise ConfigError("camera width and height must be positive")
     return cfg
 
 
 def from_dict(data: dict[str, Any]) -> Config:
+    data = {
+        k: v for k, v in data.items() if k != "safety"
+    }  # removed lock feature; ignore old files
     return validate(_build(Config, data, ""))
 
 
