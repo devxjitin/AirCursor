@@ -6,6 +6,7 @@ from collections import deque
 from dataclasses import dataclass
 
 from aircursor.actions.backend import InputBackend
+from aircursor.config import Config
 from aircursor.cursor.mapper import DEFAULT_REGION, ActiveRegion, CursorMapper
 from aircursor.features.fingers import finger_states
 from aircursor.features.pinch import (
@@ -38,6 +39,9 @@ class ControllerState:
     right_click: bool = False
     scrolled: tuple[int, int] | None = None  # (dx, dy) wheel units sent this frame
     dragging: bool = False
+    locked: bool = False
+    lock_progress: float = 0.0  # 0..1 while a fist is being held to toggle the lock
+    lock_changed: bool = False  # the lock was toggled this frame
 
 
 class CursorController:
@@ -48,6 +52,7 @@ class CursorController:
     * Thumb + index pinch held > 0.5 s: drag (button held, cursor follows until you release).
     * Thumb + middle pinch, released quickly: right click.
     * Index + middle fingers out: scroll by moving the hand.
+    * Fist held for ``lock_hold`` seconds: lock (or unlock) all input.
     * Anything else, or no hand: nothing happens.
 
     Pinching drags the fingertip, so a naive implementation clicks in the wrong place.
@@ -64,16 +69,27 @@ class CursorController:
         lookback: float = 0.20,
         release_lock: float = 0.15,
         invert_scroll: bool = False,
+        config: Config | None = None,
     ) -> None:
+        cfg = config or Config()
+        if config is not None:
+            region = ActiveRegion(*cfg.cursor.region)
+            lookback, invert_scroll = cfg.click.lookback, cfg.scroll.invert
         self._backend = backend
         w, h = backend.screen_size()
-        self.mapper = CursorMapper(w, h, region)
+        self.mapper = CursorMapper(w, h, region, cfg.cursor.min_cutoff, cfg.cursor.beta)
         self._debouncer = PoseDebouncer(debounce_frames)
-        self._pinch = PinchDetector()  # thumb + index
-        self._rpinch = PinchDetector()  # thumb + middle
-        self._left = ClickDetector(allow_drag=True)
-        self._right = ClickDetector(double_window=0.0)
-        self._scroll = ScrollTracker(invert=invert_scroll)
+        self._pinch = PinchDetector(cfg.click.pinch_close, cfg.click.pinch_open)  # thumb + index
+        self._rpinch = PinchDetector(cfg.click.pinch_close, cfg.click.pinch_open)  # thumb + middle
+        self._left = ClickDetector(
+            max_hold=cfg.click.max_hold, double_window=cfg.click.double_window, allow_drag=True
+        )
+        self._right = ClickDetector(max_hold=cfg.click.max_hold, double_window=0.0)
+        self._scroll = ScrollTracker(cfg.scroll.gain, cfg.scroll.accel, invert=invert_scroll)
+        self._lock_hold = cfg.safety.lock_hold
+        self.locked = cfg.safety.start_locked
+        self._fist_since: float | None = None
+        self._lock_armed = True
         self._lookback = lookback
         self._release_lock = release_lock
         self._history: deque[tuple[float, Pos]] = deque()
@@ -100,6 +116,26 @@ class CursorController:
         if self._left.reset() is ClickKind.DRAG_END:
             self._backend.button_up("left")
         self._right.reset()
+
+    def _update_lock(self, pose: Pose, t: float) -> tuple[float, bool]:
+        """Track the fist-hold toggle. Returns (progress 0..1, toggled this frame)."""
+        if pose is not Pose.FIST:
+            self._fist_since, self._lock_armed = None, True  # must leave the fist to re-arm
+            return 0.0, False
+        if self._fist_since is None:
+            self._fist_since = t
+        progress = min((t - self._fist_since) / self._lock_hold, 1.0)
+        if progress < 1.0 or not self._lock_armed:
+            return (progress if self._lock_armed else 0.0), False
+        self._lock_armed = False
+        self.locked = not self.locked
+        if self.locked:
+            self.release_all()
+            self._scroll.reset()
+            self._history.clear()
+            self._was_moving = False
+            self._anchor = None
+        return 0.0, True
 
     # -- main loop -------------------------------------------------------------------------
 
@@ -135,6 +171,18 @@ class CursorController:
 
         raw = classify(hand, left_pinched)
         pose = self._debouncer.update(raw)
+
+        progress, toggled = self._update_lock(pose, t)
+        if self.locked:
+            # Still watching for the unlock fist, but nothing reaches the OS.
+            return ControllerState(
+                pose,
+                None,
+                False,
+                locked=True,
+                lock_progress=progress,
+                lock_changed=toggled,
+            )
 
         # 2. Click / drag state machines.
         was_held = self._left.held or self._right.held
@@ -236,4 +284,7 @@ class CursorController:
             right_click,
             scrolled,
             dragging,
+            False,
+            progress,
+            toggled,
         )

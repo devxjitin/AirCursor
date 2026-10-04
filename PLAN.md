@@ -3,7 +3,7 @@
 Control the mouse cursor with your hand in the air, using only a webcam.
 Move a finger to move the cursor, tap to click, double tap to double-click, two fingers to scroll, and so on.
 
-Status: **Phases 0–3 implemented (pending on-device tuning); air tap deferred; scroll inertia not done.** Decided: Windows first, Python + MediaPipe. Still open (before Phase 2): click default, right-click gesture, camera, handedness.
+Status: **Phases 0–4 implemented (pending on-device tuning). Deferred: air tap, scroll inertia, Linux backend, tray app.** Decided: Windows first, Python + MediaPipe. Still open (before Phase 2): click default, right-click gesture, camera, handedness.
 
 ---
 
@@ -131,7 +131,7 @@ Each phase ends with something runnable and demonstrable.
 - Pinch-hold drag/drop.
 - **Exit:** can browse a web page and move a file or select text hands-free.
 
-### Phase 4 — Polish and safety (2–3 days)
+### Phase 4 — Polish and safety (2–3 days) ✅ (Linux backend deferred)
 - Fist lock toggle, a visible status overlay (current mode, locked or not), audio or visual click feedback.
 - Calibration wizard (set the active region and the user's reach).
 - Config file with per-gesture sensitivity, and left-handed mode.
