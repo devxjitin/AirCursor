@@ -3,7 +3,7 @@
 Control the mouse cursor with your hand in the air, using only a webcam.
 Move a finger to move the cursor, tap to click, double tap to double-click, two fingers to scroll, and so on.
 
-Status: **planning** (no code yet). Decisions marked **[DECIDE]** need sign-off before Phase 1.
+Status: **Phase 0 done.** Decided: Windows first, Python + MediaPipe. Still open (before Phase 2): click default, right-click gesture, camera, handedness.
 
 ---
 
@@ -106,7 +106,7 @@ docs/
 
 Each phase ends with something runnable and demonstrable.
 
-### Phase 0 — Foundations (½–1 day)
+### Phase 0 — Foundations (½–1 day) ✅
 - Repo scaffold, `pyproject.toml`, lint/type/test tooling, CI.
 - `HandTracker` + a debug window that draws landmarks from the webcam or a video file.
 - **Exit:** landmarks visible live, with FPS counter.
