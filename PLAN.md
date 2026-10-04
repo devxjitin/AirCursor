@@ -3,7 +3,7 @@
 Control the mouse cursor with your hand in the air, using only a webcam.
 Move a finger to move the cursor, tap to click, double tap to double-click, two fingers to scroll, and so on.
 
-Status: **planning** (no code yet). Decisions marked **[DECIDE]** need sign-off before Phase 1.
+Status: **Phases 0–4 implemented, Phase 5 partly (pending on-device tuning). Done: scroll inertia, zoom, record/replay. Deferred: air tap, Linux backend, tray app/packaging, learned classifier.** Decided: Windows first, Python + MediaPipe. Still open (before Phase 2): click default, right-click gesture, camera, handedness.
 
 ---
 
@@ -35,7 +35,6 @@ Status: **planning** (no code yet). Decisions marked **[DECIDE]** need sign-off 
 | Scroll | **Two fingers** (index + middle extended, together) moving up/down | Left/right for horizontal scroll |
 | Drag and drop | Pinch (thumb + index) and hold, move, release to drop | Also covers text selection |
 | Pause / idle | Open palm, or hand out of frame | Cursor freezes; prevents stray input |
-| Re-enable / lock toggle | Hold a fist for ~1 s | Safety switch |
 | Zoom (later) | Pinch spread with two hands, or Ctrl+scroll mapping | Phase 5 |
 
 Principle: gestures must be **distinct in hand shape** (finger count / pose), so a pose classifier picks the *mode* and motion within the mode picks the *action*.
@@ -92,7 +91,7 @@ docs/
 | R1 | **Air tap is hard with one 2D camera.** Forward motion shows up as a small change in z estimate, fingertip scale, and a brief downward y-shift, and all of these are noisy. | Detect the tap from a combination of signals (z-velocity, finger-length foreshortening, short downward jab). Collect real recordings and tune thresholds. Ship **pinch-to-click as a built-in alternative mode**, and let the user choose in config. Decide the default after Phase 2 testing. |
 | R2 | **Cursor moves during the tap**, so the click lands on the wrong spot. | Keep a ~150 ms ring buffer of cursor positions. When a tap is confirmed, click at the position from *before* the tap motion began, and freeze the cursor for a short lock window. |
 | R3 | **Jitter versus lag.** Raw landmarks shake. Heavy smoothing feels laggy. | One Euro Filter, with `min_cutoff` and `beta` tunable. Add a small dead zone when the hand is almost still. |
-| R4 | **Accidental clicks and scrolls** (talking with your hands, reaching for the mouse). | Pose-gated modes, an activation hysteresis (a pose must be held for N frames), the open-palm pause, and the fist lock toggle. |
+| R4 | **Accidental clicks and scrolls** (talking with your hands, reaching for the mouse). | Pose-gated modes, an activation hysteresis (a pose must be held for N frames), and the open-palm / fist pause. (A fist-hold lock toggle was built in Phase 4 and later removed.) |
 | R5 | **Arm fatigue** ("gorilla arm"). | Small active region (the user reaches only about 1/3 of the frame), relative/clutch mode (lift hand to re-center), and rest-friendly defaults. |
 | R6 | **Lighting, backgrounds, occlusion, and hand-edge-of-frame loss.** | Rely on MediaPipe robustness, show a "hand lost" indicator, and add a low-light tip to the docs. |
 | R7 | **Latency** from capture, inference, and smoothing. | Threaded capture with latest-frame only, a lite model, reduced resolution (e.g. 640×480), profile each stage, and set a latency budget per stage. |
@@ -106,39 +105,39 @@ docs/
 
 Each phase ends with something runnable and demonstrable.
 
-### Phase 0 — Foundations (½–1 day)
+### Phase 0 — Foundations (½–1 day) ✅
 - Repo scaffold, `pyproject.toml`, lint/type/test tooling, CI.
 - `HandTracker` + a debug window that draws landmarks from the webcam or a video file.
 - **Exit:** landmarks visible live, with FPS counter.
 
-### Phase 1 — Point and move (1–2 days)
+### Phase 1 — Point and move (1–2 days) ✅
 - Finger-pose classification (which fingers are up).
 - Active-region → screen mapping, One Euro smoothing, optional acceleration.
 - `InputBackend` for Windows and macOS (move only).
 - Pause on open palm / hand lost.
 - **Exit:** cursor follows the index finger smoothly and freezes when the hand drops.
 
-### Phase 2 — Click and double click (2–4 days) ← the riskiest phase
+### Phase 2 — Click and double click (2–4 days) ← pinch click done; air tap not started
 - Record a dataset of taps, pinches, and non-tap motions (landmark JSON) to tune against.
 - Implement the tap detector, the position-rewind and cursor-lock logic (R2), and the double-tap timer.
 - Implement pinch-click as the alternative mode.
 - Replay tests with precision/recall targets (e.g. ≥95% detection, <1 false click per 5 minutes of normal use).
 - **Exit:** reliable left click and double click in either mode.
 
-### Phase 3 — Scroll, right click, drag (2–3 days)
+### Phase 3 — Scroll, right click, drag (2–3 days) ✅ (right click = thumb + middle pinch; no inertia yet)
 - Two-finger scroll with velocity-to-delta mapping, inertia, and a dead zone.
 - Right click gesture.
 - Pinch-hold drag/drop.
 - **Exit:** can browse a web page and move a file or select text hands-free.
 
-### Phase 4 — Polish and safety (2–3 days)
-- Fist lock toggle, a visible status overlay (current mode, locked or not), audio or visual click feedback.
+### Phase 4 — Polish and safety (2–3 days) ✅ (Linux backend deferred)
+- ~~Fist lock toggle~~ (removed on request), a visible status overlay, audio or visual click feedback.
 - Calibration wizard (set the active region and the user's reach).
 - Config file with per-gesture sensitivity, and left-handed mode.
 - Linux backend and a `doctor` command.
 - **Exit:** usable for a full work session without surprise input.
 
-### Phase 5 — Extras (optional, later)
+### Phase 5 — Extras (optional, later) — in progress: inertia, zoom (single hand, 3 fingers), record/replay done
 - Zoom and pinch-spread, virtual desktop swipe, media controls.
 - A learned gesture classifier if the heuristics hit a ceiling.
 - Tray app and an installer/packaging (PyInstaller or similar).
