@@ -3,7 +3,7 @@
 Control the mouse cursor with your hand in the air, using only a webcam.
 Move a finger to move the cursor, tap to click, double tap to double-click, two fingers to scroll, and so on.
 
-Status: **Phase 0 done.** Decided: Windows first, Python + MediaPipe. Still open (before Phase 2): click default, right-click gesture, camera, handedness.
+Status: **Phase 0 and 1 done (pending on-device tuning).** Decided: Windows first, Python + MediaPipe. Still open (before Phase 2): click default, right-click gesture, camera, handedness.
 
 ---
 
@@ -111,7 +111,7 @@ Each phase ends with something runnable and demonstrable.
 - `HandTracker` + a debug window that draws landmarks from the webcam or a video file.
 - **Exit:** landmarks visible live, with FPS counter.
 
-### Phase 1 — Point and move (1–2 days)
+### Phase 1 — Point and move (1–2 days) ✅
 - Finger-pose classification (which fingers are up).
 - Active-region → screen mapping, One Euro smoothing, optional acceleration.
 - `InputBackend` for Windows and macOS (move only).
