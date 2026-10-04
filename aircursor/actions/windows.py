@@ -6,6 +6,8 @@ import ctypes
 
 _SM_CXSCREEN = 0
 _SM_CYSCREEN = 1
+_MOUSEEVENTF_LEFTDOWN = 0x0002
+_MOUSEEVENTF_LEFTUP = 0x0004
 
 
 class WindowsBackend:
@@ -24,3 +26,8 @@ class WindowsBackend:
 
     def move_to(self, x: int, y: int) -> None:
         self._user32.SetCursorPos(int(x), int(y))
+
+    def click(self, x: int, y: int) -> None:
+        self.move_to(x, y)
+        self._user32.mouse_event(_MOUSEEVENTF_LEFTDOWN, 0, 0, 0, 0)
+        self._user32.mouse_event(_MOUSEEVENTF_LEFTUP, 0, 0, 0, 0)

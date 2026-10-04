@@ -17,6 +17,7 @@ def make_hand(
     ring: bool = False,
     pinky: bool = False,
     offset: tuple[float, float] = (0.0, 0.0),
+    pinch: bool = False,
 ) -> Hand:
     pts = np.zeros((21, 3), dtype=np.float32)
     pts[0] = (0.5, 0.9, 0)
@@ -27,9 +28,11 @@ def make_hand(
     ext = {"index": index, "middle": middle, "ring": ring, "pinky": pinky}
     for name, base in _FINGER_BASE.items():
         x = _FINGER_X[name]
-        ys = (0.60, 0.50, 0.42, 0.35) if ext[name] else (0.60, 0.50, 0.55, 0.62)
+        ys = (0.60, 0.50, 0.42, 0.35) if ext[name] else (0.60, 0.50, 0.58, 0.66)
         for i, y in enumerate(ys):
             pts[base + i] = (x, y, 0)
+    if pinch:
+        pts[4] = pts[8] + (0.01, 0.02, 0)  # thumb tip touching the index tip
     pts[:, 0] += offset[0]
     pts[:, 1] += offset[1]
     return Hand(points=pts, handedness="Right", score=0.99)

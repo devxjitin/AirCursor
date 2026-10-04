@@ -11,6 +11,9 @@ class InputBackend(Protocol):
 
     def move_to(self, x: int, y: int) -> None: ...
 
+    def click(self, x: int, y: int) -> None:
+        """Left-click at (x, y)."""
+
 
 class RecordingBackend:
     """Does not touch the OS; records moves. Used for tests and ``--dry-run``."""
@@ -18,12 +21,16 @@ class RecordingBackend:
     def __init__(self, width: int = 1920, height: int = 1080) -> None:
         self._size = (width, height)
         self.moves: list[tuple[int, int]] = []
+        self.clicks: list[tuple[int, int]] = []
 
     def screen_size(self) -> tuple[int, int]:
         return self._size
 
     def move_to(self, x: int, y: int) -> None:
         self.moves.append((x, y))
+
+    def click(self, x: int, y: int) -> None:
+        self.clicks.append((x, y))
 
 
 def make_backend() -> InputBackend:

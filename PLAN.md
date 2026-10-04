@@ -3,7 +3,7 @@
 Control the mouse cursor with your hand in the air, using only a webcam.
 Move a finger to move the cursor, tap to click, double tap to double-click, two fingers to scroll, and so on.
 
-Status: **Phase 0 and 1 done (pending on-device tuning).** Decided: Windows first, Python + MediaPipe. Still open (before Phase 2): click default, right-click gesture, camera, handedness.
+Status: **Phases 0–2 implemented with pinch click (pending on-device tuning); air tap deferred.** Decided: Windows first, Python + MediaPipe. Still open (before Phase 2): click default, right-click gesture, camera, handedness.
 
 ---
 
@@ -118,7 +118,7 @@ Each phase ends with something runnable and demonstrable.
 - Pause on open palm / hand lost.
 - **Exit:** cursor follows the index finger smoothly and freezes when the hand drops.
 
-### Phase 2 — Click and double click (2–4 days) ← the riskiest phase
+### Phase 2 — Click and double click (2–4 days) ← pinch click done; air tap not started
 - Record a dataset of taps, pinches, and non-tap motions (landmark JSON) to tune against.
 - Implement the tap detector, the position-rewind and cursor-lock logic (R2), and the double-tap timer.
 - Implement pinch-click as the alternative mode.

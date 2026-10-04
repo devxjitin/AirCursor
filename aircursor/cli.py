@@ -27,6 +27,8 @@ def run(
     """Track hands from ``source``; optionally drive the cursor. Returns frames processed."""
     fps = FpsCounter()
     frames = 0
+    flash_until = 0.0
+    flash_text = ""
     src = open_source(source)
     try:
         with HandTracker() as tracker:
@@ -38,6 +40,11 @@ def run(
                 hand = tracker.process(frame, ts)
                 state = controller.update(hand, ts) if controller else None
                 frames += 1
+                if state and state.click:
+                    flash_text = "DOUBLE CLICK" if state.click.value == "double" else "CLICK"
+                    flash_until = ts + 400
+                    if not show:
+                        print(f"{flash_text} at {state.click_pos}")
                 current = fps.tick()
                 if show:
                     mirror = source.isdigit()  # webcams are shown like a mirror
@@ -48,7 +55,13 @@ def run(
                         draw_hand(frame, shown)
                     if controller is not None:
                         draw_region(frame, controller.mapper.region)
-                    draw_status(frame, current, shown, state.pose.value if state else None)
+                    draw_status(
+                        frame,
+                        current,
+                        shown,
+                        state.pose.value if state else None,
+                        flash_text if ts < flash_until else None,
+                    )
                     cv2.imshow(WINDOW, frame)
                     if cv2.waitKey(1) & 0xFF in (ord("q"), 27):
                         break

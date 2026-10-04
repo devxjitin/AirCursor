@@ -11,13 +11,17 @@ from aircursor.tracking.landmarks import Hand
 class Pose(Enum):
     NONE = "none"  # no hand in view
     POINT = "point"  # index only: move the cursor
+    PINCH = "pinch"  # thumb touching index, other fingers curled: click
     TWO_FINGERS = "two_fingers"  # index + middle: scroll (later phase)
     OPEN_PALM = "open_palm"  # pause
     FIST = "fist"  # idle / lock
     OTHER = "other"  # anything else
 
 
-def classify_fingers(f: FingerStates) -> Pose:
+def classify_fingers(f: FingerStates, pinched: bool = False) -> Pose:
+    # Pinching bends the index finger, so check it before the finger-count rules.
+    if pinched and not (f.middle or f.ring or f.pinky):
+        return Pose.PINCH
     # The thumb is ignored for the main poses: people hold it in or out unpredictably.
     if f.count_non_thumb == 4:
         return Pose.OPEN_PALM
@@ -30,8 +34,8 @@ def classify_fingers(f: FingerStates) -> Pose:
     return Pose.OTHER
 
 
-def classify(hand: Hand | None) -> Pose:
-    return Pose.NONE if hand is None else classify_fingers(finger_states(hand))
+def classify(hand: Hand | None, pinched: bool = False) -> Pose:
+    return Pose.NONE if hand is None else classify_fingers(finger_states(hand), pinched)
 
 
 class PoseDebouncer:

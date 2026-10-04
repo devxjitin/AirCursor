@@ -40,10 +40,18 @@ def draw_region(frame: Frame, region: ActiveRegion) -> None:
     cv2.rectangle(frame, p1, p2, _YELLOW, 1)
 
 
-def draw_status(frame: Frame, fps: float, hand: Hand | None, pose: str | None = None) -> None:
+def draw_status(
+    frame: Frame,
+    fps: float,
+    hand: Hand | None,
+    pose: str | None = None,
+    flash: str | None = None,
+) -> None:
     """Draw the FPS counter, hand status and (optionally) the current pose in place."""
     status = f"{hand.handedness} hand ({hand.score:.2f})" if hand else "no hand"
     cv2.putText(frame, f"FPS: {fps:5.1f}", (10, 25), cv2.FONT_HERSHEY_SIMPLEX, 0.7, _WHITE, 2)
     cv2.putText(frame, status, (10, 52), cv2.FONT_HERSHEY_SIMPLEX, 0.6, _WHITE, 1)
     if pose is not None:
         cv2.putText(frame, f"pose: {pose}", (10, 78), cv2.FONT_HERSHEY_SIMPLEX, 0.6, _YELLOW, 2)
+    if flash:
+        cv2.putText(frame, flash, (10, 110), cv2.FONT_HERSHEY_SIMPLEX, 0.9, _GREEN, 3)
