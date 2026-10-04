@@ -64,7 +64,7 @@ On Linux, MediaPipe needs `libegl1 libgles2 libgl1`.
 
 ## Configuration
 
-`aircursor config init` writes a commented-free default file to `aircursor config path`
+`aircursor config init` writes a default file to the location shown by `aircursor config path`
 (`%APPDATA%\aircursor\config.toml` on Windows). Any setting you leave out keeps its default;
 unknown or invalid settings are reported by name. Use `--config FILE` on any command to use another file.
 
