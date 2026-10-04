@@ -12,6 +12,8 @@ _MOUSEEVENTF_RIGHTDOWN = 0x0008
 _MOUSEEVENTF_RIGHTUP = 0x0010
 _MOUSEEVENTF_WHEEL = 0x0800
 _MOUSEEVENTF_HWHEEL = 0x01000
+_VK_CONTROL = 0x11
+_KEYEVENTF_KEYUP = 0x0002
 _FLAGS = {
     "left": (_MOUSEEVENTF_LEFTDOWN, _MOUSEEVENTF_LEFTUP),
     "right": (_MOUSEEVENTF_RIGHTDOWN, _MOUSEEVENTF_RIGHTUP),
@@ -52,3 +54,12 @@ class WindowsBackend:
             self._user32.mouse_event(_MOUSEEVENTF_WHEEL, 0, 0, dy, 0)
         if dx:
             self._user32.mouse_event(_MOUSEEVENTF_HWHEEL, 0, 0, dx, 0)
+
+    def zoom(self, dy: int) -> None:
+        if not dy:
+            return
+        self._user32.keybd_event(_VK_CONTROL, 0, 0, 0)
+        try:
+            self._user32.mouse_event(_MOUSEEVENTF_WHEEL, 0, 0, dy, 0)
+        finally:
+            self._user32.keybd_event(_VK_CONTROL, 0, _KEYEVENTF_KEYUP, 0)

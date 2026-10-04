@@ -22,6 +22,9 @@ class InputBackend(Protocol):
     def scroll(self, dx: int, dy: int) -> None:
         """Scroll by wheel units (120 = one notch). Positive dy = up, positive dx = right."""
 
+    def zoom(self, dy: int) -> None:
+        """Ctrl + wheel by ``dy`` wheel units (positive = zoom in)."""
+
 
 class RecordingBackend:
     """Does not touch the OS; records moves. Used for tests and ``--dry-run``."""
@@ -33,6 +36,7 @@ class RecordingBackend:
         self.right_clicks: list[tuple[int, int]] = []
         self.button_events: list[tuple[str, str]] = []  # ("down" | "up", button)
         self.scrolls: list[tuple[int, int]] = []
+        self.zooms: list[int] = []
 
     def screen_size(self) -> tuple[int, int]:
         return self._size
@@ -51,6 +55,9 @@ class RecordingBackend:
 
     def scroll(self, dx: int, dy: int) -> None:
         self.scrolls.append((dx, dy))
+
+    def zoom(self, dy: int) -> None:
+        self.zooms.append(dy)
 
 
 def make_backend() -> InputBackend:

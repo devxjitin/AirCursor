@@ -48,6 +48,15 @@ class ScrollConfig:
     gain: float = 800.0  # wheel units per hand-size of travel (120 units = one notch)
     accel: float = 0.5  # extra distance for faster movement
     invert: bool = False  # True: moving the hand up scrolls the page down (touch style)
+    inertia: bool = True  # keep gliding after a flick
+    inertia_time: float = 0.4  # seconds: how quickly a glide fades out
+
+
+@dataclass
+class ZoomConfig:
+    enabled: bool = True  # three fingers (index, middle, ring) up/down = Ctrl+wheel zoom
+    gain: float = 400.0  # wheel units per hand-size of travel
+    invert: bool = False
 
 
 @dataclass
@@ -68,6 +77,7 @@ class Config:
     cursor: CursorConfig = field(default_factory=CursorConfig)
     click: ClickConfig = field(default_factory=ClickConfig)
     scroll: ScrollConfig = field(default_factory=ScrollConfig)
+    zoom: ZoomConfig = field(default_factory=ZoomConfig)
     safety: SafetyConfig = field(default_factory=SafetyConfig)
     feedback: FeedbackConfig = field(default_factory=FeedbackConfig)
 
@@ -123,6 +133,8 @@ def validate(cfg: Config) -> Config:
         raise ConfigError("click.pinch_close must be above 0 and below click.pinch_open")
     if c.max_hold <= 0 or c.double_window < 0 or c.lookback < 0:
         raise ConfigError("click timings must be positive")
+    if cfg.scroll.inertia_time <= 0 or cfg.scroll.gain <= 0 or cfg.zoom.gain <= 0:
+        raise ConfigError("scroll.inertia_time, scroll.gain and zoom.gain must be positive")
     if cfg.safety.lock_hold <= 0:
         raise ConfigError("safety.lock_hold must be positive")
     if cfg.camera.width <= 0 or cfg.camera.height <= 0:

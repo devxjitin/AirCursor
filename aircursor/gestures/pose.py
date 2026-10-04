@@ -12,7 +12,8 @@ class Pose(Enum):
     NONE = "none"  # no hand in view
     POINT = "point"  # index only: move the cursor
     PINCH = "pinch"  # thumb touching index, other fingers curled: click
-    TWO_FINGERS = "two_fingers"  # index + middle: scroll (later phase)
+    TWO_FINGERS = "two_fingers"  # index + middle: scroll
+    THREE_FINGERS = "three_fingers"  # index + middle + ring: zoom
     OPEN_PALM = "open_palm"  # pause
     FIST = "fist"  # idle / lock
     OTHER = "other"  # anything else
@@ -31,6 +32,8 @@ def classify_fingers(f: FingerStates, pinched: bool = False) -> Pose:
         return Pose.POINT
     if f.index and f.middle and not (f.ring or f.pinky):
         return Pose.TWO_FINGERS
+    if f.index and f.middle and f.ring and not f.pinky:
+        return Pose.THREE_FINGERS
     return Pose.OTHER
 
 

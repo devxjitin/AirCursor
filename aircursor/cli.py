@@ -20,6 +20,7 @@ from aircursor.cursor.mapper import ActiveRegion
 from aircursor.doctor import run_doctor
 from aircursor.fps import FpsCounter
 from aircursor.gestures.pose import Pose, classify
+from aircursor.recording import read_frames, write_frame
 from aircursor.tracking import HandTracker
 from aircursor.tracking.landmarks import Landmark
 from aircursor.ui.feedback import Feedback
@@ -52,6 +53,8 @@ def _event_label(state: ControllerState) -> str | None:
         return "RIGHT CLICK"
     if state.scrolled:
         return "SCROLL"
+    if state.zoomed:
+        return "ZOOM"
     return None
 
 
@@ -69,6 +72,7 @@ def run(
     show: bool = True,
     max_frames: int | None = None,
     cfg: Config | None = None,
+    record_to: Path | None = None,
 ) -> int:
     """Track hands from ``source``; optionally drive the cursor. Returns frames processed."""
     cfg = cfg or Config()
@@ -78,6 +82,7 @@ def run(
     flash_until = 0.0
     flash_text = ""
     src = open_source(source, cfg.camera.width, cfg.camera.height)
+    rec = open(record_to, "w", encoding="utf-8") if record_to else None
     try:
         with HandTracker(preferred=cfg.hand.preferred) as tracker:
             while max_frames is None or frames < max_frames:
@@ -86,11 +91,13 @@ def run(
                     break
                 frame, ts = item
                 hand = tracker.process(frame, ts)
+                if rec is not None:
+                    write_frame(rec, ts, hand)
                 state = controller.update(hand, ts) if controller else None
                 frames += 1
                 if state and (label := _event_label(state)):
                     flash_text, flash_until = label, ts + 400
-                    if not show and label != "SCROLL":
+                    if not show and label not in ("SCROLL", "ZOOM"):
                         print(f"{label} at {state.click_pos or state.cursor}")
                 if state and (sound := _sound_for(state)):
                     feedback.notify(sound)
@@ -124,9 +131,24 @@ def run(
         if controller is not None:
             controller.release_all()  # never leave a mouse button stuck down
         src.close()
+        if rec is not None:
+            rec.close()
         if show:
             cv2.destroyAllWindows()
     return frames
+
+
+def replay(path: Path | str, controller: CursorController) -> list[tuple[int, str]]:
+    """Feed a recording through ``controller``; return ``(timestamp_ms, action)`` per event."""
+    events: list[tuple[int, str]] = []
+    try:
+        for ts, hand in read_frames(path):
+            state = controller.update(hand, ts)
+            if label := _event_label(state):
+                events.append((ts, label))
+    finally:
+        controller.release_all()
+    return events
 
 
 def run_calibration(source: str, cfg: Config, cfg_path: Path | None) -> ActiveRegion | None:
@@ -198,6 +220,13 @@ def main(argv: Sequence[str] | None = None) -> int:
             p.add_argument("--dry-run", action="store_true", help="log only; don't move the cursor")
             p.add_argument("--invert-scroll", action="store_true", help="touch-style scrolling")
             p.add_argument("--start-locked", action="store_true", help="start with input locked")
+    rec = sub.add_parser("record", help="record hand landmarks (no video) to a file")
+    rec.add_argument("output", help="file to write (.jsonl)")
+    rec.add_argument("--source", default=None, help="camera index or video file")
+    rec.add_argument("--no-window", action="store_true", help="headless")
+    rec.add_argument("--max-frames", type=int, default=None, help="stop after N frames")
+    rep = sub.add_parser("replay", help="run a recording through the gestures (no mouse)")
+    rep.add_argument("input", help="recording made with `record`")
     doc = sub.add_parser("doctor", help="check camera, model, permissions and config")
     doc.add_argument("--source", default=None, help="camera index to test (default: config)")
     conf = sub.add_parser("config", help="show, locate or create the config file")
@@ -219,6 +248,12 @@ def main(argv: Sequence[str] | None = None) -> int:
             return 0
 
         cfg = _load_config(args.config)
+        if args.command == "replay":
+            events = replay(args.input, CursorController(RecordingBackend(), config=cfg))
+            for ts, label in events:
+                print(f"{ts / 1000:8.3f}s  {label}")
+            print(f"{len(events)} events")
+            return 0
         source = args.source or cfg.camera.source
         if args.command == "doctor":
             return run_doctor(source, args.config)
@@ -227,6 +262,18 @@ def main(argv: Sequence[str] | None = None) -> int:
             if region is None:
                 print("Calibration cancelled; nothing saved.")
                 return 1
+            return 0
+
+        if args.command == "record":
+            n = run(
+                source,
+                None,
+                show=not args.no_window,
+                max_frames=args.max_frames,
+                cfg=cfg,
+                record_to=Path(args.output),
+            )
+            print(f"Recorded {n} frames to {args.output}")
             return 0
 
         controller = None

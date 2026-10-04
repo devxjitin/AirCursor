@@ -3,7 +3,7 @@
 Control your mouse cursor with your hand in the air, using only a webcam.
 See [PLAN.md](PLAN.md) for the design and roadmap.
 
-**Status:** Phase 4: move, click, double-click, right-click, scroll and drag (Windows), with a lock gesture, calibration, config file and `doctor`.
+**Status:** Phase 5 (partial): move, click, double-click, right-click, scroll (with flick inertia), zoom and drag (Windows), plus lock gesture, calibration, config file, `doctor`, and landmark record/replay.
 
 ## Setup (Windows)
 
@@ -46,7 +46,8 @@ Press `q` or `Esc` in the preview window to quit.
 | Two quick pinches (within ~0.45 s) | Double click |
 | Pinch held longer than 0.5 s | Drag: button goes down, cursor follows your hand, release the pinch to drop |
 | Pinch thumb and **middle** finger, release quickly | Right click |
-| Index + middle fingers out together (ring and little finger curled), move hand up/down/left/right | Scroll |
+| Index + middle fingers out together (ring and little finger curled), move hand up/down/left/right | Scroll. A quick flick keeps gliding and fades out; touching (pinching) stops it |
+| Index + middle + **ring** fingers out (little finger curled), move hand up/down | Zoom (Ctrl + mouse wheel): up = zoom in |
 | **Hold a fist for 1 s** | Lock: all input is blocked until you hold a fist for 1 s again (a progress bar fills while you hold). Locking mid-drag releases the button |
 | Open palm, anything else, or hand out of view | Cursor freezes |
 
@@ -62,6 +63,12 @@ ruff check . ; ruff format --check . ; mypy aircursor ; pytest
 
 On Linux, MediaPipe needs `libegl1 libgles2 libgl1`.
 
+## Recording and replaying
+
+`aircursor record session.jsonl` saves hand landmarks (numbers only, no video) while you use the camera.
+`aircursor replay session.jsonl` runs them through the gesture logic offline, never touching your mouse, and
+prints each action with its timestamp. Use it to tune thresholds, or attach a recording to a bug report.
+
 ## Configuration
 
 `aircursor config init` writes a default file to the location shown by `aircursor config path`
@@ -74,7 +81,8 @@ unknown or invalid settings are reported by name. Use `--config FILE` on any com
 | `[hand]` | `preferred = "any" \| "left" \| "right"`: which hand controls the cursor. With a preference, the other hand is ignored (left-handed mode: `"left"`) |
 | `[cursor]` | `region` (set by `calibrate`), `min_cutoff` / `beta` smoothing |
 | `[click]` | pinch thresholds, `max_hold`, `double_window`, `lookback` |
-| `[scroll]` | `gain`, `accel`, `invert` |
+| `[scroll]` | `gain`, `accel`, `invert`, `inertia`, `inertia_time` |
+| `[zoom]` | `enabled`, `gain`, `invert` |
 | `[safety]` | `lock_hold` seconds, `start_locked` |
 | `[feedback]` | `sound`: short beeps for click / drag / lock (Windows) |
 

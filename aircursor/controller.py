@@ -38,6 +38,7 @@ class ControllerState:
     click_pos: Pos | None = None
     right_click: bool = False
     scrolled: tuple[int, int] | None = None  # (dx, dy) wheel units sent this frame
+    zoomed: int | None = None  # Ctrl+wheel units sent this frame
     dragging: bool = False
     locked: bool = False
     lock_progress: float = 0.0  # 0..1 while a fist is being held to toggle the lock
@@ -51,7 +52,8 @@ class CursorController:
     * Thumb + index pinch, released quickly: left click (twice quickly: double click).
     * Thumb + index pinch held > 0.5 s: drag (button held, cursor follows until you release).
     * Thumb + middle pinch, released quickly: right click.
-    * Index + middle fingers out: scroll by moving the hand.
+    * Index + middle fingers out: scroll by moving the hand (a flick keeps gliding).
+    * Index + middle + ring fingers out: zoom (Ctrl+wheel) by moving the hand up/down.
     * Fist held for ``lock_hold`` seconds: lock (or unlock) all input.
     * Anything else, or no hand: nothing happens.
 
@@ -85,7 +87,16 @@ class CursorController:
             max_hold=cfg.click.max_hold, double_window=cfg.click.double_window, allow_drag=True
         )
         self._right = ClickDetector(max_hold=cfg.click.max_hold, double_window=0.0)
-        self._scroll = ScrollTracker(cfg.scroll.gain, cfg.scroll.accel, invert=invert_scroll)
+        self._scroll = ScrollTracker(
+            cfg.scroll.gain,
+            cfg.scroll.accel,
+            invert=invert_scroll,
+            inertia_time=cfg.scroll.inertia_time,
+        )
+        self._inertia = cfg.scroll.inertia
+        self._zoom_enabled = cfg.zoom.enabled
+        self._zoom = ScrollTracker(cfg.zoom.gain, 0.3, invert=cfg.zoom.invert, vertical_only=True)
+        self._was_scrolling = False
         self._lock_hold = cfg.safety.lock_hold
         self.locked = cfg.safety.start_locked
         self._fist_since: float | None = None
@@ -132,6 +143,8 @@ class CursorController:
         if self.locked:
             self.release_all()
             self._scroll.reset()
+            self._zoom.reset()
+            self._was_scrolling = False
             self._history.clear()
             self._was_moving = False
             self._anchor = None
@@ -261,18 +274,48 @@ class CursorController:
             self._history.clear()
         self._was_moving = moving
 
-        # 4. Scrolling.
+        # 4. Scrolling, zooming and inertia.
         scrolled: tuple[int, int] | None = None
-        if hand is not None and pose is Pose.TWO_FINGERS and raw is Pose.TWO_FINGERS:
+        zoomed: int | None = None
+        # A right-click pinch also looks like two fingers out, so never scroll mid-pinch.
+        idle_hand = hand is not None and not (held or left_pinched or right_pinched)
+        scrolling = idle_hand and pose is Pose.TWO_FINGERS and raw is Pose.TWO_FINGERS
+        zooming = (
+            self._zoom_enabled
+            and idle_hand
+            and pose is Pose.THREE_FINGERS
+            and raw is Pose.THREE_FINGERS
+        )
+        if left_pinched or right_pinched or held:
+            self._scroll.cancel_coast()  # touching the "screen" stops a glide
+        if scrolling or zooming:
+            assert hand is not None
             pts = hand.points
-            x = float((pts[Landmark.INDEX_TIP, 0] + pts[Landmark.MIDDLE_TIP, 0]) / 2)
-            y = float((pts[Landmark.INDEX_TIP, 1] + pts[Landmark.MIDDLE_TIP, 1]) / 2)
-            dx, dy = self._scroll.update(t, x, y, hand_scale(hand))
-            if dx or dy:
-                self._backend.scroll(dx, dy)
-                scrolled = (dx, dy)
-        else:
-            self._scroll.reset()
+            tips = (Landmark.INDEX_TIP, Landmark.MIDDLE_TIP)
+            x = float(sum(pts[i, 0] for i in tips) / 2)
+            y = float(sum(pts[i, 1] for i in tips) / 2)
+            scale = hand_scale(hand)
+            if scrolling:
+                dx, dy = self._scroll.update(t, x, y, scale)
+                if dx or dy:
+                    self._backend.scroll(dx, dy)
+                    scrolled = (dx, dy)
+            else:
+                _, dz = self._zoom.update(t, x, y, scale)
+                if dz:
+                    self._backend.zoom(dz)
+                    zoomed = dz
+        if not scrolling:
+            if self._was_scrolling:
+                self._scroll.stop(coast=self._inertia)
+            elif self._scroll.coasting:
+                dx, dy = self._scroll.coast(t)
+                if dx or dy:
+                    self._backend.scroll(dx, dy)
+                    scrolled = (dx, dy)
+        if not zooming:
+            self._zoom.reset()
+        self._was_scrolling = scrolling
 
         return ControllerState(
             pose,
@@ -283,6 +326,7 @@ class CursorController:
             click_pos,
             right_click,
             scrolled,
+            zoomed,
             dragging,
             False,
             progress,

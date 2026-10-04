@@ -3,7 +3,7 @@
 Control the mouse cursor with your hand in the air, using only a webcam.
 Move a finger to move the cursor, tap to click, double tap to double-click, two fingers to scroll, and so on.
 
-Status: **Phases 0–4 implemented (pending on-device tuning). Deferred: air tap, scroll inertia, Linux backend, tray app.** Decided: Windows first, Python + MediaPipe. Still open (before Phase 2): click default, right-click gesture, camera, handedness.
+Status: **Phases 0–4 implemented, Phase 5 partly (pending on-device tuning). Done: scroll inertia, zoom, record/replay. Deferred: air tap, Linux backend, tray app/packaging, learned classifier.** Decided: Windows first, Python + MediaPipe. Still open (before Phase 2): click default, right-click gesture, camera, handedness.
 
 ---
 
@@ -138,7 +138,7 @@ Each phase ends with something runnable and demonstrable.
 - Linux backend and a `doctor` command.
 - **Exit:** usable for a full work session without surprise input.
 
-### Phase 5 — Extras (optional, later)
+### Phase 5 — Extras (optional, later) — in progress: inertia, zoom (single hand, 3 fingers), record/replay done
 - Zoom and pinch-spread, virtual desktop swipe, media controls.
 - A learned gesture classifier if the heuristics hit a ceiling.
 - Tray app and an installer/packaging (PyInstaller or similar).
